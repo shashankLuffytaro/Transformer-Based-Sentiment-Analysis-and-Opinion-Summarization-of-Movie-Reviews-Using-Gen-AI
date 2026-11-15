@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer-Based Sentiment Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Section */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1rem;
+        }
+
+        /* Card Style */
+        .card {
+            background: rgb(133 208 245 / 95%);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        /* Movie Selection */
+        /* Movie Selection */
+        .movie-selection {
+            text-align: center;
+        }
+
+        .movie-selection h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Dropdown and Button Container - Side by Side */
+        .dropdown-button-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Dropdown Style */
+        .movie-dropdown {
+            flex: 2;
+            min-width: 250px;
+            position: relative;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #333;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 20px;
+        }
+
+        select:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Analyze Button */
+        .analyze-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin-left: 80px;
+        }
+
+        .analyze-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .reviews-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .review-column {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .column-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 3px solid;
+            text-align: center;
+        }
+
+        .positive-header {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .negative-header {
+            color: #ef4444;
+            border-bottom-color: #ef4444;
+        }
+
+        .review-list {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .review-item {
+            background: #f8f9fa;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 10px;
+            border-left: 4px solid;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .positive-review {
+            border-left-color: #10b981;
+        }
+
+        .negative-review {
+            border-left-color: #ef4444;
+        }
+
+        /* Summary Section */
+        .summary-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .summary-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .summary-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            line-height: 1.6;
+            color: #333;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        /* Button Group */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-primary:hover,
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .stat-positive {
+            color: #10b981;
+        }
+
+        .stat-negative {
+            color: #ef4444;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @media (max-width: 768px) {
+
+            .reviews-container,
+            .summary-container {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.2rem;
+            }
+
+            select {
+                width: 90%;
+            }
+        }
+
+        .stat-sub {
+            font-size: 16px;
+            color: #0f0f0f;
+            margin-top: 5px;
+        }
+
+        .model-info {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .model-info h3 {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Transformer-Based Sentiment Analysis and Opinion Summarization of Movie Reviews Using Gen AI</h1>
+        </div>
+
+        <div class="card">
+            <div class="movie-selection">
+                <h2>Select a Movie</h2>
+                <div class="dropdown-button-container">
+                    <div class="movie-dropdown">
+                        <select id="movieSelect">
+                            <option value="">-- Choose a movie --</option>
+                            {% for key, movie in movies.items() %}
+                            <option value="{{ key }}">{{ movie.name }} {{ movie.icon }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button class="analyze-btn" id="analyzeBtn" disabled>
+                        Analyze Reviews
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="card">
+                <div class="stats" id="stats"></div>
+                <div id="model-info"></div>
+                <div class="reviews-container">
+                    <div class="review-column">
+                        <div class="column-header positive-header">😊 Positive Reviews</div>
+                        <div class="review-list" id="positiveReviews"></div>
+                    </div>
+                    <div class="review-column">
+                        <div class="column-header negative-header">😞 Negative Reviews</div>
+                        <div class="review-list" id="negativeReviews"></div>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" id="summarizeBtn">📝 Proceed to Summary</button>
+                    <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+                </div>
+            </div>
+
+            <div class="summary-section" id="summarySection">
+                <div class="card">
+                    <h2 style="text-align: center; margin-bottom: 20px;">AI-Generated Summaries</h2>
+                    <div class="summary-container">
+                        <div class="summary-card">
+                            <h3 style="color: #10b981;">✨ Positive Reviews Summary</h3>
+                            <div class="summary-content" id="positiveSummary">
+                                Loading...
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <h3 style="color: #ef4444;">💔 Negative Reviews Summary</h3>
+                            <div class="summary-content" id="negativeSummary">
+                                Loading...
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <button class="btn btn-secondary" id="backBtn">← Back to Reviews</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedMovie = null;
+        let currentMovieName = '';
+
+        // Movie selection handling from dropdown
+        const movieSelect = document.getElementById('movieSelect');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        movieSelect.addEventListener('change', function () {
+            selectedMovie = this.value;
+            analyzeBtn.disabled = !selectedMovie;
+
+            // Remove any existing selection highlight if needed
+            if (!selectedMovie) {
+                analyzeBtn.disabled = true;
+            }
+        });
+
+        // Analyze button
+        document.getElementById('analyzeBtn').addEventListener('click', async () => {
+            if (!selectedMovie) return;
+
+            const btn = document.getElementById('analyzeBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader"></div> Analyzing...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ movie_key: selectedMovie })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    currentMovieName = data.movie_name;
+                    displayResults(data);
+                    document.getElementById('resultsSection').style.display = 'block';
+                    document.getElementById('summarySection').style.display = 'none';
+                } else {
+                    alert(data.error || 'Error analyzing reviews');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+
+            const total = data.positive_count + data.negative_count;
+
+            const positivePercent = total ? ((data.positive_count / total) * 100).toFixed(1) : 0;
+            const negativePercent = total ? ((data.negative_count / total) * 100).toFixed(1) : 0;
+
+            const statsHtml = `
+        <div class="stat">
+            <div class="stat-number stat-positive">${data.positive_count}</div>
+            <div>Positive Reviews</div>
+            <div class="stat-sub">${positivePercent}%</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-number stat-negative">${data.negative_count}</div>
+            <div>Negative Reviews</div>
+            <div class="stat-sub">${negativePercent}%</div>
+        </div>
+
+        <div class="stat">
+            <div class="stat-number">${total}</div>
+            <div>Total Reviews</div>
+        </div>
+    `;
+
+            const modelHtml = `
+        <div class="model-info">
+            <center>
+            <h3>Model Information</h3>
+            <p><strong>Feature Extraction:</strong> GPT-2</p>
+            <p><strong>Classification Models:</strong> Logistic Regression</p>
+            <p><strong>Summarization Model:</strong> LLaMA (via Groq API)</p>
+            <center>
+        </div>
+    `;
+
+            document.getElementById('stats').innerHTML = statsHtml;
+            document.getElementById('model-info').innerHTML = modelHtml;
+
+            //  NOW INSIDE FUNCTION (FIXED)
+            const positiveHtml = data.positive_reviews.map(review =>
+                `<div class="review-item positive-review">${escapeHtml(review)}</div>`
+            ).join('');
+
+            document.getElementById('positiveReviews').innerHTML =
+                positiveHtml || '<p>No positive reviews found.</p>';
+
+            const negativeHtml = data.negative_reviews.map(review =>
+                `<div class="review-item negative-review">${escapeHtml(review)}</div>`
+            ).join('');
+
+            document.getElementById('negativeReviews').innerHTML =
+                negativeHtml || '<p>No negative reviews found.</p>';
+        }
+
+
+        // Summarize button
+        document.getElementById('summarizeBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('summarizeBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader"></div> Generating Summary...';
+            btn.disabled = true;
+
+            try {
+                console.log('Calling summarize endpoint...');
+                const response = await fetch('/summarize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                console.log('Response received:', data);
+
+                if (response.ok) {
+                    if (data.positive_summary && data.negative_summary) {
+                        document.getElementById('positiveSummary').innerHTML = `<p>${escapeHtml(data.positive_summary)}</p>`;
+                        document.getElementById('negativeSummary').innerHTML = `<p>${escapeHtml(data.negative_summary)}</p>`;
+                        document.getElementById('summarySection').style.display = 'block';
+
+                        // Scroll to summary
+                        document.getElementById('summarySection').scrollIntoView({ behavior: 'smooth' });
+                    } else {
+                        alert('Summaries generated but returned empty. Please check the console for details.');
+                    }
+                } else {
+                    alert(data.error || 'Error generating summary');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // Reset button
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            try {
+                await fetch('/reset', { method: 'POST' });
+                document.getElementById('resultsSection').style.display = 'none';
+                document.getElementById('summarySection').style.display = 'none';
+                selectedMovie = null;
+                movieSelect.value = '';
+                analyzeBtn.disabled = true;
+            } catch (error) {
+                console.error('Reset error:', error);
+            }
+        });
+
+        // Back button
+        document.getElementById('backBtn').addEventListener('click', () => {
+            document.getElementById('summarySection').style.display = 'none';
+        });
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

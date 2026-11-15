@@ -1,0 +1,6 @@
+path/to/big-file-or-folder
+extracted_features.csv
+models/
+.ipynb_checkpoints/
+*.pkl
+.env
