@@ -1,0 +1,2 @@
+# Transformer-Based-Sentiment-Analysis-and-Opinion-Summarization-of-Movie-Reviews-Using-Gen-AI
+This project concentrates on sentiment-aware movie review analysis and summarisation using a transformer. It is impractical to manually analyse the amount of movie reviews that can be found online. Even more important, a sentiment label alone provides limited insight as to why an audience responded as it did, and summarising all reviews 
